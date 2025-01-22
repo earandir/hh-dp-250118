@@ -10,14 +10,15 @@ import os
 
 def is_valid_uuid(value: str) -> bool:
     """Validate if a string is a valid UUID."""
+    if not isinstance(value, str) or not value:
+        return False
+
     try:
         UUID(value)
         return True
     except ValueError:
         return False
     
-from uuid import UUID
-
 def is_valid_timestamp(value: str) -> bool:
     """Validate if a string is a valid timestamp in the expected format."""
     try:
