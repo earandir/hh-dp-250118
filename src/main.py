@@ -9,8 +9,11 @@ from utils import filter_claims_by_pharmacies, filter_reverts_by_claims
 from utils import remove_duplicate_claims
 from utils import save_output
 from analytics import calculate_metrics
+from analytics import get_chain_recommendations
+from analytics import analyze_quantities
 from logging_config import setup_logging
 import logging
+import pandas as pd
 
 # Setup logging
 setup_logging()
@@ -83,6 +86,20 @@ def main(pharmacies, claims, reverts):
     logging.info("Processing metrics...")
     metrics = calculate_metrics(unique_claims, reverts_data)
     save_output(metrics, 'metrics.json', output_path)
+
+    # Get chain recommendations
+    logging.info("Processing chain recommendations...")
+    claims_df = pd.DataFrame(unique_claims)
+    pharmacies_df = pd.DataFrame(pharmacies_data)
+    chain_recommendations = get_chain_recommendations(claims_df, pharmacies_df)
+    save_output(chain_recommendations, 'chain_recommendations.json', output_path)
+
+    # Analyze quantities
+    logging.info("Processing quantity analysis...")
+    quantities = analyze_quantities(claims_df)
+    save_output(quantities, 'common_ndc_quantities.json', output_path)
+
+
 
     logging.info("Application finished")
 
