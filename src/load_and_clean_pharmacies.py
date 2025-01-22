@@ -29,6 +29,7 @@ def load_and_clean_pharmacies(folder_path: str) -> List[Dict[str, str]]:
         
         for file_path in csv_files:
             with open(file_path, mode='r', newline='') as file:
+                logging.info(f"Processing pharmacy file: {file_path}")
                 reader = csv.DictReader(file)
                 for row in reader:
                     # Create a tuple of the values to check for duplicates

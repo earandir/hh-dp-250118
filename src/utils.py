@@ -1,6 +1,12 @@
 from uuid import UUID
 from datetime import datetime
 from typing import Any
+from pathlib import Path
+import json
+import logging
+from logging_config import setup_logging
+import os
+
 
 def is_valid_uuid(value: str) -> bool:
     """Validate if a string is a valid UUID."""
@@ -88,3 +94,42 @@ def filter_reverts_by_claims(reverts, claims):
     filtered_reverts = [revert for revert in reverts if revert['claim_id'] in valid_claim_ids]
         
     return filtered_reverts
+
+def remove_duplicate_claims(claims):
+    """
+    Removes duplicate claims based on the 'id' key.
+
+    Args:
+        claims (list[dict]): A list of claim dictionaries.
+
+    Returns:
+        list[dict]: A list of unique claim dictionaries.
+    """
+    seen_ids = set()  # Set to track seen claim IDs
+    unique_claims = []  # List to store unique claims
+
+    for claim in claims:
+        claim_id = claim.get('id')  # Get the claim ID
+        if claim_id not in seen_ids:
+            unique_claims.append(claim)  # Add to unique claims if not a duplicate
+            seen_ids.add(claim_id)  # Mark the ID as seen
+
+    return unique_claims
+
+def save_output(data: list, filename: str, output_dir: Path) -> None:
+    """
+    Save processed data to JSON file.
+    
+    Args:
+        data: List of dictionaries to save
+        filename: Name of the output file
+        output_dir: Directory to save the file in
+    """
+    file_path = os.path.join(output_dir, filename)
+    try:
+        with open(file_path, 'w') as f:
+            json.dump(data, f, indent=2)
+        logging.info(f"Successfully wrote {filename}")
+    except Exception as e:
+        logging.error(f"Error writing {filename}: {e}")
+        raise
