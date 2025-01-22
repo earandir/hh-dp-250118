@@ -14,7 +14,8 @@ This application processes pharmacy claims data to generate various analytics an
 ## Requirements
 
 - Python 3.13
-- No external dependencies beyond Python standard library
+- argparse
+- pandas
 
 ## Installation
 
@@ -29,7 +30,10 @@ cd hh-dp-250118
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
-
+3. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
 ## Usage
 
 Run the application using the following command:
@@ -76,22 +80,14 @@ The application expects JSON files in the following format:
 The application generates three JSON files:
 
 1. `metrics.json`: Contains metrics per pharmacy and drug combination
-2. `recommendations.json`: Contains top 2 chains per drug based on pricing
-3. `quantities.json`: Contains most common prescribed quantities per drug
+2. `chain_recommendations.json`: Contains top 2 chains per drug based on pricing
+3. `common_ndc_quantities.json`: Contains most common prescribed quantities per drug
 
 ## Performance Considerations
 
 - The application uses ThreadPoolExecutor with 10 workers to process files in parallel
 - Data is processed in a streaming fashion to minimize memory usage
 - Invalid data is logged and skipped rather than causing application failure
-
-## Testing
-
-To run the tests:
-
-```bash
-python -m pytest tests/
-```
 
 ## License
 
