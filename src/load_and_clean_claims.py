@@ -5,6 +5,7 @@ from typing import List, Dict, Any
 from datetime import datetime
 from logging_config import setup_logging
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 setup_logging()
 
@@ -40,11 +41,46 @@ def validate_claim_record(data, schema) -> bool:
             if not (isinstance(value, int) or (isinstance(value, float) and value.is_integer())):
                 logging.error(f"Claim ID {claim_id}: Invalid type for key: {key}. Expected int, got {type(value)} with value {value}")
                 return False
+            # Check if the quantity is greater than 0
+            if key == 'quantity' and value <= 0:
+                logging.error(f"Claim ID {claim_id}: Invalid value for key: {key}. Expected greater than 0, got {value}")
+                return False
         elif not isinstance(value, expected_type):
             logging.error(f"Claim ID {claim_id}: Invalid type for key: {key}. Expected {expected_type}, got {type(value)}")
             return False
 
     return True
+
+def process_file(file: str, claims_schema: Dict[str, str]) -> List[Dict[str, Any]]:
+    """
+    Process a single JSON file and validate its records.
+    
+    Args:
+        file: Path to the JSON file
+        claims_schema: Dictionary containing the expected schema
+        
+    Returns:
+        List[Dict[str, Any]]: List of valid claim records
+    """
+    valid_records = []
+    try:
+        with open(file, 'r') as j:
+            logging.info(f"Loading claims data from {os.path.basename(file)}")
+            records = json.load(j)
+            
+            # Handle both single records and lists of records
+            if isinstance(records, dict):
+                records = [records]
+            
+            for record in records:
+                if validate_claim_record(record, claims_schema):
+                    # Convert timestamp to datetime object
+                    record['timestamp'] = datetime.fromisoformat(record['timestamp'])
+                    valid_records.append(record)
+    except (json.JSONDecodeError, Exception) as e:
+        logging.error(f"Error processing file {file}: {e}")
+    
+    return valid_records
 
 def load_and_validate_json_data(folder_path: str) -> List[Dict[str, Any]]:
     """
@@ -79,47 +115,14 @@ def load_and_validate_json_data(folder_path: str) -> List[Dict[str, Any]]:
         logging.error(f"No JSON files found in {folder_path}")
         raise ValueError(f"No JSON files found in {folder_path}")
     
-    invalid_files = []
-    invalid_records = []
-    total_records = 0
-    
-    for file in files:
-        try:
-            with open(file, 'r') as j:
-                logging.info(f"Loading data from {os.path.basename(file)}")
-
-                records = json.load(j)
-                
-                # Handle both single records and lists of records
-                if isinstance(records, dict):
-                    records = [records]
-                
-                total_records += len(records)
-                
-                valid_records = []
-                for record in records:
-                    if validate_claim_record(record, claims_schema):
-                        # Convert timestamp to datetime object
-                        record['timestamp'] = datetime.fromisoformat(record['timestamp'])
-                        valid_records.append(record)
-                    else:
-                        invalid_records.append(f"ID: {record.get('id', 'Unknown')} in {os.path.basename(file)}")
-                
-                if valid_records:
-                    valid_data.extend(valid_records)
-                else:
-                    invalid_files.append(os.path.basename(file))
-                    
-        except (json.JSONDecodeError, Exception) as e:
-            invalid_files.append(f"{os.path.basename(file)} (Error: {str(e)})")
-            continue
-    
-    if invalid_files:
-        logging.warning(f"The following files were skipped due to invalid format or schema: {', '.join(invalid_files)}")
-    
-    if invalid_records:
-        logging.info(f"Found {len(invalid_records)} invalid claims out of {total_records} total records")
-        #for idx, record in enumerate(invalid_records, 1):
-        #    logging.info(f"{idx} of {len(invalid_records)} - {record}")
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_file = {executor.submit(process_file, file, claims_schema): file for file in files}
+        for future in as_completed(future_to_file):
+            file = future_to_file[future]
+            try:
+                valid_records = future.result()
+                valid_data.extend(valid_records)
+            except Exception as e:
+                logging.error(f"Error processing file {file}: {e}")
     
     return valid_data

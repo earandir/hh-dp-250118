@@ -35,11 +35,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 Run the application using the following command:
 
 ```bash
-python src/run.py \
-    --pharmacy-dir /data/pharmacies \
-    --claims-dir /data/claims \
-    --reverts-dir /data/reverts \
-    --output-dir /output
+python src\main.py --pharmacies data\pharmacies --claims data\claims --reverts data\reverts
 ```
 
 ### Input Data Structure
