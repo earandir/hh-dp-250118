@@ -37,23 +37,6 @@ def main(pharmacies, claims, reverts):
     reverts_folder_path = os.path.join(base_dir, reverts)
     output_path = os.path.join(base_dir, output_path)
     
-    # Validate that the folders exist
-    if not os.path.isdir(claims_folder_path):
-        logging.error(f"The claims folder path '{claims_folder_path}' does not exist.")
-        sys.exit(1)
-    
-    if not os.path.isdir(pharmacy_folder_path):
-        logging.error(f"The pharmacy folder path '{pharmacy_folder_path}' does not exist.")
-        sys.exit(1)
-    
-    if not os.path.isdir(reverts_folder_path):
-        logging.error(f"The reverts folder path '{reverts_folder_path}' does not exist.")
-        sys.exit(1)
-
-    if not os.path.isdir(output_path):
-        logging.error(f"The output folder path '{output_path}' does not exist.")
-        sys.exit(1)
-    
     # Load the data from the files
     logging.info(f"pharmacies path: {pharmacy_folder_path}")
     pharmacies_data = load_and_clean_pharmacies(pharmacy_folder_path)
@@ -62,7 +45,6 @@ def main(pharmacies, claims, reverts):
     logging.info(f"reverts path: {reverts_folder_path}")
     reverts_data = load_and_validate_revert_json_data(reverts_folder_path)
 
-    
     # Filter the claims data
     total_claims = len(claims_data)
     claims_data = filter_claims_by_pharmacies(claims_data, pharmacies_data)
@@ -98,8 +80,6 @@ def main(pharmacies, claims, reverts):
     logging.info("Processing quantity analysis...")
     quantities = analyze_quantities(claims_df)
     save_output(quantities, 'common_ndc_quantities.json', output_path)
-
-
 
     logging.info("Application finished")
 
