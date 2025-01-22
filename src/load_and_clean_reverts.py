@@ -6,6 +6,7 @@ from logging_config import setup_logging
 import logging
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils import is_valid_uuid, is_valid_timestamp
 
 setup_logging()
 
@@ -27,18 +28,16 @@ def validate_revert_record(record: Dict[str, Any]) -> bool:
             return False
             
         # Validate each field
-        if not isinstance(record['id'], str) or not record['id']:
-            logging.error(f"Invalid ID in record: {record}")
+        if not is_valid_uuid(record['id']):
+            logging.error(f"Invalid ID in record: {record['id']}")
             return False
             
-        if not isinstance(record['claim_id'], str) or not record['claim_id']:
-            logging.error(f"Invalid claim ID in record: {record}")
+        if not is_valid_uuid(record['claim_id']):
+            logging.error(f"Invalid claim ID in record: {record['claim_id']}")
             return False
             
-        try:
-            datetime.fromisoformat(record['timestamp'])
-        except ValueError:
-            logging.error(f"Invalid timestamp in record: {record}")
+        if not is_valid_timestamp(record['timestamp']):
+            logging.error(f"Invalid timestamp in record: {record['timestamp']}")
             return False
             
         return True

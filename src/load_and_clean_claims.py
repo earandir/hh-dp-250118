@@ -6,6 +6,7 @@ from datetime import datetime
 from logging_config import setup_logging
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from utils import is_valid_uuid, is_valid_timestamp, is_valid_ndc, is_valid_npi, is_valid_quantity
 
 setup_logging()
 
@@ -30,12 +31,12 @@ def validate_claim_record(data, schema) -> bool:
 
         value = data[key]
         if expected_type == 'timestamp':
-            try:
-                # Attempt to parse the timestamp
-                datetime.fromisoformat(value)
-            except ValueError:
-                logging.error(f"Invalid timestamp format for key: {key}, value: {value}")
+            if not is_valid_timestamp(value):
+                logging.error(f"Claim ID {claim_id}: Invalid timestamp format for key: {key}. Expected 'YYYY-MM-DDTHH:MM:SS', got {value}")
                 return False
+        elif key == 'price' and value < 0:
+            logging.error(f"Claim ID {claim_id}: Invalid value for key: {key}. Expected greater than 0, got {value}")
+            return False    
         elif expected_type == int:
             # Check if value is an integer or a float that can be safely converted
             if not (isinstance(value, int) or (isinstance(value, float) and value.is_integer())):
